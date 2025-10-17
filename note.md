@@ -87,7 +87,7 @@ mysql -u root -proot en < end.sql
 
 ### Export la data : 
 
-Creer le script suivant dans export (ATTENTION VOUS DEVRER MODIFIER LES VARIABLE EN DEBUT DE FICHIER)
+Creer le script suivant dans export (ATTENTION VOUS DEVEZ MODIFIER LES VARIABLE EN DEBUT DE FICHIER)
 ```bash
 #!/bin/bash
 
@@ -157,3 +157,74 @@ SELECT page_id, CONVERT(page_title USING utf8mb4) INTO OUTFILE '/var/lib/mysql-f
 ```
 
 Export les page links : Lancer les script avec les bonne variables
+
+
+Ajouter des header sur les csv : 
+
+```bash
+[root@jonquille:/persistent/wikilinks/neo4j/imports]# head frpage.csv 
+id:ID(Page-ID),title:STRING
+222657,"!"
+4433171,"!!"
+351979,"!!!"
+11632234,"!!!_(album)"
+14399476,"!="
+16174485,"!Action_Pact!"
+16174504,"!Action_Pact!_(groupe)"
+16286686,"!K7_Records"
+11108328,"!Karas"
+
+[root@jonquille:/persistent/wikilinks/neo4j/imports]# head enpage.csv 
+id:ID(Page-ID),title:STRING
+5878274,!
+3632887,!!
+600744,!!!
+63743203,!!!!!!!
+34443176,!!!Fuck_You!!!
+11011780,!!!Fuck_You!!!_And_Then_Some
+34443184,!!!Fuck_You!!!_and_Then_Some
+59827823,!!!_(!!!_album)
+59827819,!!!_(American_band)
+
+[root@jonquille:/persistent/wikilinks/neo4j/imports]# head frpagelinks.csv 
+:START_ID(Page-ID),:END_ID(Page-ID),:TYPE
+3,9251052,LINKS_TO
+3,349553,LINKS_TO
+3,13419,LINKS_TO
+3,318693,LINKS_TO
+3,3566,LINKS_TO
+3,1095,LINKS_TO
+3,3789,LINKS_TO
+3,4667,LINKS_TO
+3,3495,LINKS_TO
+
+[root@jonquille:/persistent/wikilinks/neo4j/imports]# head enpagelinks.csv 
+:START_ID(Page-ID),:END_ID(Page-ID),:TYPE
+10,13231,LINKS_TO
+10,5611746,LINKS_TO
+10,51841793,LINKS_TO
+10,11442989,LINKS_TO
+10,25520560,LINKS_TO
+10,45397868,LINKS_TO
+10,1192566,LINKS_TO
+10,10782860,LINKS_TO
+10,2822501,LINKS_TO
+```
+
+Importer les fichier dans la base neo4j (seul base accessible en community edition)
+
+```
+sudo docker exec -it neo4j-neo4j-1 bash
+root@fbd63cbe6d3f:/var/lib/neo4j# apt update ; apt install -y sudo
+...
+root@fbd63cbe6d3f:/var/lib/neo4j# sudo -E -u neo4j bash -c '
+export JAVA_TOOL_OPTIONS="--add-opens=java.base/java.nio=ALL-UNNAMED";
+/var/lib/neo4j/bin/neo4j-admin database import full \
+  --overwrite-destination=true \
+  --nodes=import/enpage.csv \
+  --relationships=import/enpagelinks.csv \
+  --delimiter="," \
+  --quote="\"" \
+  neo4j
+'
+
